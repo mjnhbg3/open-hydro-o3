@@ -395,7 +395,10 @@ class Database:
                 stats[f"{table}_count"] = count[0]
             
             # Database file size
-            stats['db_size_mb'] = round(self.db_path.stat().st_size / (1024 * 1024), 2)
+            if self.db_path.is_file():
+                stats['db_size_mb'] = round(self.db_path.stat().st_size / (1024 * 1024), 2)
+            else:
+                stats['db_size_mb'] = 0
             
             return stats
             
