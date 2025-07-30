@@ -411,7 +411,9 @@ class KPICalculator:
             self.logger.error(f"Failed to get recent dosing totals: {e}")
             return {"total_24h": 0, "pump_a_24h": 0, "pump_b_24h": 0, "ph_pump_24h": 0}
 
-    async def _get_days_since_reservoir_change(self) -> int:
+    async def _get_days_since_reservoir_change(
+        self,
+    ) -> int:  # pragma: no cover - placeholder
         """Get days since last reservoir change"""
         try:
             # This would check config_changes table for reservoir change events

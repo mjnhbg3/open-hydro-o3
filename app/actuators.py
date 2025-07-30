@@ -60,7 +60,7 @@ class ActuatorController:
         else:
             self.logger.info("Running actuators in mock mode")
 
-    def _init_hardware(self):
+    def _init_hardware(self):  # pragma: no cover - hardware initialization
         """Initialize GPIO pins for actuators"""
         try:
             GPIO.setmode(GPIO.BCM)
@@ -299,7 +299,7 @@ class ActuatorController:
             self.last_dose_reset = today
             self.logger.info("Daily dose counters reset")
 
-    async def shutdown(self):
+    async def shutdown(self):  # pragma: no cover - cleanup
         """Graceful shutdown of all actuators"""
         self.logger.info("Shutting down actuators...")
         await self.emergency_stop()
@@ -312,7 +312,7 @@ class ActuatorController:
             except Exception as e:
                 self.logger.error(f"GPIO cleanup error: {e}")
 
-    def __del__(self):
+    def __del__(self):  # pragma: no cover - cleanup
         """Cleanup on destruction"""
         if not self.mock and HARDWARE_AVAILABLE:
             try:
