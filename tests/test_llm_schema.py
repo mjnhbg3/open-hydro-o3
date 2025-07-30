@@ -10,6 +10,15 @@ from app.llm_agent import LLMAgent
 from app.utils import validate_json_schema, load_json_schema
 
 
+@pytest.fixture
+def llm_agent(mock_openai):
+    """Create LLM agent with mocked OpenAI"""
+    with patch.dict('os.environ', {'OPENAI_API_KEY': 'test-key'}):
+        agent = LLMAgent()
+        agent.client = mock_openai
+        return agent
+
+
 class TestLLMSchemaValidation:
     """Test LLM response schema validation"""
     
@@ -119,14 +128,6 @@ class TestLLMSchemaValidation:
 
 class TestLLMAgent:
     """Test LLM agent functionality"""
-    
-    @pytest.fixture
-    def llm_agent(self, mock_openai):
-        """Create LLM agent with mocked OpenAI"""
-        with patch.dict('os.environ', {'OPENAI_API_KEY': 'test-key'}):
-            agent = LLMAgent()
-            agent.client = mock_openai
-            return agent
     
     @pytest.mark.asyncio
     async def test_llm_decision_making(self, llm_agent, mock_sensor_data, mock_config):
@@ -294,7 +295,10 @@ class TestLLMIntegration:
                 agent.kpi_calc = MagicMock()
                 agent.kpi_calc.calculate_current_kpis = AsyncMock(return_value={'health_score': 0.8})
                 
-                sensor_data = {'water': {'ph': 6.0, 'ec': 1.6}}
+                sensor_data = {
+                    'water': {'ph': 6.0, 'ec': 1.6},
+                    'air': {'temperature': 24.0, 'humidity': 55}
+                }
                 config = {'targets': {'ph_target': 6.0}}
                 
                 result = await agent.make_decision(sensor_data, config)
@@ -312,7 +316,7 @@ class TestLLMIntegration:
         llm_agent.vector_memory = MagicMock()
         llm_agent.vector_memory.search = AsyncMock(return_value=[])
         llm_agent.kpi_calc = MagicMock()
-        llm_agent.kip_calc.calculate_current_kpis = AsyncMock(return_value={'health_score': 0.8})
+        llm_agent.kpi_calc.calculate_current_kpis = AsyncMock(return_value={'health_score': 0.8})
         
         # Make multiple decisions with same input
         results = []
