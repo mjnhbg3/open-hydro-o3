@@ -332,3 +332,66 @@ def get_config_hash(config: Dict[str, Any]) -> str:
     # Convert to sorted JSON string for consistent hashing
     config_str = json.dumps(config, sort_keys=True, default=str)
     return hashlib.sha256(config_str.encode()).hexdigest()[:16]
+
+
+# Configuration loading ----------------------------------------------------
+CONFIG_DIR = Path(__file__).resolve().parent / "config"
+
+
+def _set_nested_config(config: Dict[str, Any], path: str, value: Any):
+    """Set a value in a nested dictionary using dot notation."""
+    keys = path.split(".")
+    current = config
+    for key in keys[:-1]:
+        if key not in current or not isinstance(current[key], dict):
+            current[key] = {}
+        current = current[key]
+    current[keys[-1]] = value
+
+
+def _get_env_overrides() -> Dict[str, Any]:
+    """Collect configuration overrides from environment variables."""
+    overrides: Dict[str, Any] = {}
+    env_mappings = {
+        "GROW_PHASE": ("grow_phase", str),
+        "PH_TARGET": ("targets.ph_target", float),
+        "EC_TARGET": ("targets.ec_target", float),
+        "TEMP_TARGET": ("targets.temp_target", float),
+        "LIGHT_HOURS": ("schedules.light_hours", int),
+        "LIGHT_START_TIME": ("schedules.light_start_time", str),
+        "SENSOR_POLL_INTERVAL": ("schedules.sensor_poll_interval_s", int),
+        "CONTROL_LOOP_INTERVAL": ("schedules.control_loop_interval_s", int),
+        "RESERVOIR_VOLUME": ("reservoir_volume_l", float),
+        "BASELINE_DOSING": ("baseline_dosing_ml_per_week", float),
+    }
+
+    for env_var, (config_path, type_func) in env_mappings.items():
+        env_value = os.getenv(env_var)
+        if env_value is not None:
+            try:
+                typed_value = type_func(env_value)
+                _set_nested_config(overrides, config_path, typed_value)
+            except (ValueError, TypeError):
+                print(f"Warning: Invalid environment variable {env_var}={env_value}")
+
+    return overrides
+
+
+def load_config() -> Dict[str, Any]:
+    """Load configuration from JSON files with environment overrides."""
+    try:
+        base_config = load_json_file(CONFIG_DIR / "default.json")
+
+        current_file = CONFIG_DIR / "current.json"
+        if current_file.exists():
+            current_config = load_json_file(current_file)
+            base_config = merge_dicts(base_config, current_config)
+
+        env_overrides = _get_env_overrides()
+        if env_overrides:
+            base_config = merge_dicts(base_config, env_overrides)
+
+        return base_config
+    except Exception as exc:
+        print(f"Warning: Error loading configuration: {exc}")
+        return {}

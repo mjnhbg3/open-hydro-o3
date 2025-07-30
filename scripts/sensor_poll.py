@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from app.sensor_io import SensorInterface
 from app.memory.db import Database
 from app.utils import setup_logging, create_alert
-from app.config.default import load_config
+from app.utils import load_config
 
 
 class SensorPoller:
