@@ -2,11 +2,11 @@ openai==1.57.4
 paho-mqtt==2.1.0
 opencv-python==4.10.0.84
 adafruit-circuitpython-ads1x15==2.2.25
-adafruit-circuitpython-dht==3.7.9
+adafruit-circuitpython-dht==4.0.9
 chromadb==0.4.24
 pandas==2.2.3
 schedule==1.2.2
-fastapi==0.111.3
+fastapi==0.111.1
 uvicorn==0.32.1
 pytest==8.3.4
 pytest-cov==6.0.0
