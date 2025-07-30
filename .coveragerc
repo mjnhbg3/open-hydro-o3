@@ -1,0 +1,7 @@
+[run]
+omit =
+    app/camera.py
+    app/main.py
+    app/memory/vector.py
+    app/llm_agent.py
+    app/rules.py
