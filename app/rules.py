@@ -471,11 +471,13 @@ class RulesEngine:
                 "frozen": should_freeze,
                 "reason": f"Health: {health_7day:.2f}, pH in-spec: {ph_in_spec}%, EC in-spec: {ec_in_spec}%",
                 "freeze_until": (
-                    datetime.utcnow()
-                    + timedelta(days=self.thresholds["freeze_period_days"])
-                ).isoformat()
-                if should_freeze
-                else None,
+                    (
+                        datetime.utcnow()
+                        + timedelta(days=self.thresholds["freeze_period_days"])
+                    ).isoformat()
+                    if should_freeze
+                    else None
+                ),
             }
 
         except Exception as e:

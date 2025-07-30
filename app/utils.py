@@ -16,49 +16,49 @@ import jsonschema
 def setup_logging(log_level: str = None, log_path: str = None):
     """Setup application logging with rotation"""
     if log_level is None:
-        log_level = os.getenv('LOG_LEVEL', 'INFO')
-    
+        log_level = os.getenv("LOG_LEVEL", "INFO")
+
     if log_path is None:
-        log_path = os.getenv('LOG_PATH', '~/hydro/logs/')
-    
+        log_path = os.getenv("LOG_PATH", "~/hydro/logs/")
+
     log_dir = Path(log_path).expanduser()
     log_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Configure root logger
     logger = logging.getLogger()
     logger.setLevel(getattr(logging, log_level.upper()))
-    
+
     # Clear existing handlers
     logger.handlers.clear()
-    
+
     # Console handler
     console_handler = logging.StreamHandler()
     console_formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
     console_handler.setFormatter(console_formatter)
     logger.addHandler(console_handler)
-    
+
     # Rotating file handler (10MB, keep 5 files)
-    log_file = log_dir / 'hydro.log'
+    log_file = log_dir / "hydro.log"
     file_handler = RotatingFileHandler(
-        log_file, maxBytes=10*1024*1024, backupCount=5
+        log_file, maxBytes=10 * 1024 * 1024, backupCount=5
     )
     file_formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s'
+        "%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s"
     )
     file_handler.setFormatter(file_formatter)
     logger.addHandler(file_handler)
-    
+
     # Error log (separate file for errors only)
-    error_file = log_dir / 'hydro_errors.log'
+    error_file = log_dir / "hydro_errors.log"
     error_handler = RotatingFileHandler(
-        error_file, maxBytes=5*1024*1024, backupCount=3
+        error_file, maxBytes=5 * 1024 * 1024, backupCount=3
     )
     error_handler.setLevel(logging.ERROR)
     error_handler.setFormatter(file_formatter)
     logger.addHandler(error_handler)
-    
+
     logging.info(f"Logging initialized - Level: {log_level}, Path: {log_dir}")
 
 
@@ -68,8 +68,8 @@ def load_json_file(file_path: str) -> Dict[str, Any]:
         path = Path(file_path)
         if not path.exists():
             raise FileNotFoundError(f"JSON file not found: {file_path}")
-        
-        with open(path, 'r') as f:
+
+        with open(path, "r") as f:
             return json.load(f)
     except json.JSONDecodeError as e:
         raise ValueError(f"Invalid JSON in {file_path}: {e}")
@@ -82,16 +82,18 @@ def save_json_file(data: Dict[str, Any], file_path: str, backup: bool = True):
     try:
         path = Path(file_path)
         path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         # Create backup if file exists and backup requested
         if backup and path.exists():
-            backup_path = path.with_suffix(f'.backup_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json')
+            backup_path = path.with_suffix(
+                f'.backup_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
+            )
             path.rename(backup_path)
-        
+
         # Write new file
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
             json.dump(data, f, indent=2, default=str)
-            
+
     except Exception as e:
         raise RuntimeError(f"Failed to save {file_path}: {e}")
 
@@ -117,18 +119,18 @@ def validate_json_schema(data: Dict[str, Any], schema: Dict[str, Any]) -> bool:
 
 def create_timestamp() -> str:
     """Create ISO timestamp string"""
-    return datetime.utcnow().isoformat() + 'Z'
+    return datetime.utcnow().isoformat() + "Z"
 
 
 def parse_timestamp(timestamp_str: str) -> datetime:
     """Parse ISO timestamp string to datetime"""
     try:
         # Handle both with and without 'Z' suffix
-        if timestamp_str.endswith('Z'):
-            timestamp_str = timestamp_str[:-1] + '+00:00'
-        
+        if timestamp_str.endswith("Z"):
+            timestamp_str = timestamp_str[:-1] + "+00:00"
+
         return datetime.fromisoformat(timestamp_str)
-    except ValueError as e:
+    except ValueError:
         raise ValueError(f"Invalid timestamp format: {timestamp_str}")
 
 
@@ -137,13 +139,13 @@ def calculate_vpd(temperature: float, humidity: float) -> float:
     try:
         # Saturated vapor pressure (kPa) using Tetens formula
         es = 0.6108 * (10 ** ((7.5 * temperature) / (237.3 + temperature)))
-        
+
         # Actual vapor pressure (kPa)
         ea = es * (humidity / 100)
-        
+
         # VPD = saturated - actual
         vpd = es - ea
-        
+
         return round(vpd, 2)
     except Exception:
         return 0.0
@@ -213,10 +215,11 @@ def format_duration(seconds: int) -> str:
 def sanitize_filename(filename: str) -> str:
     """Sanitize filename for safe filesystem usage"""
     import re
+
     # Remove/replace unsafe characters
-    filename = re.sub(r'[<>:"/\\|?*]', '_', filename)
+    filename = re.sub(r'[<>:"/\\|?*]', "_", filename)
     # Remove control characters
-    filename = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', filename)
+    filename = re.sub(r"[\x00-\x1f\x7f-\x9f]", "", filename)
     # Limit length
     return filename[:255]
 
@@ -225,11 +228,12 @@ def get_git_revision() -> Optional[str]:
     """Get current git revision if available"""
     try:
         import subprocess
+
         result = subprocess.run(
-            ['git', 'rev-parse', '--short', 'HEAD'],
+            ["git", "rev-parse", "--short", "HEAD"],
             capture_output=True,
             text=True,
-            timeout=5
+            timeout=5,
         )
         if result.returncode == 0:
             return result.stdout.strip()
@@ -242,22 +246,23 @@ def get_system_info() -> Dict[str, Any]:
     """Get basic system information"""
     import platform
     import psutil
-    
+
     try:
         return {
             "platform": platform.platform(),
             "python_version": platform.python_version(),
             "cpu_count": psutil.cpu_count(),
             "memory_gb": round(psutil.virtual_memory().total / (1024**3), 1),
-            "disk_free_gb": round(psutil.disk_usage('/').free / (1024**3), 1),
-            "git_revision": get_git_revision()
+            "disk_free_gb": round(psutil.disk_usage("/").free / (1024**3), 1),
+            "git_revision": get_git_revision(),
         }
     except Exception as e:
         return {"error": str(e)}
 
 
-def create_alert(severity: str, category: str, message: str, 
-                details: Dict[str, Any] = None) -> Dict[str, Any]:
+def create_alert(
+    severity: str, category: str, message: str, details: Dict[str, Any] = None
+) -> Dict[str, Any]:
     """Create standardized alert dictionary"""
     return {
         "timestamp": create_timestamp(),
@@ -266,21 +271,23 @@ def create_alert(severity: str, category: str, message: str,
         "message": message,
         "details": details or {},
         "acknowledged": False,
-        "resolved": False
+        "resolved": False,
     }
 
 
-def exponential_backoff(attempt: int, base_delay: float = 1.0, 
-                       max_delay: float = 60.0) -> float:
+def exponential_backoff(
+    attempt: int, base_delay: float = 1.0, max_delay: float = 60.0
+) -> float:
     """Calculate exponential backoff delay"""
-    delay = base_delay * (2 ** attempt)
+    delay = base_delay * (2**attempt)
     return min(delay, max_delay)
 
 
 class SingletonMeta(type):
     """Metaclass for singleton pattern"""
+
     _instances = {}
-    
+
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
             cls._instances[cls] = super().__call__(*args, **kwargs)
@@ -289,6 +296,7 @@ class SingletonMeta(type):
 
 def retry_on_exception(max_retries: int = 3, delay: float = 1.0):
     """Decorator for retrying function calls on exception"""
+
     def decorator(func):
         def wrapper(*args, **kwargs):
             for attempt in range(max_retries):
@@ -297,38 +305,43 @@ def retry_on_exception(max_retries: int = 3, delay: float = 1.0):
                 except Exception as e:
                     if attempt == max_retries - 1:
                         raise e
-                    
+
                     wait_time = exponential_backoff(attempt, delay)
-                    logging.warning(f"Attempt {attempt + 1} failed: {e}. Retrying in {wait_time}s...")
-                    
+                    logging.warning(
+                        f"Attempt {attempt + 1} failed: {e}. Retrying in {wait_time}s..."
+                    )
+
                     import time
+
                     time.sleep(wait_time)
-            
+
         return wrapper
+
     return decorator
 
 
-def merge_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any], 
-                deep: bool = True) -> Dict[str, Any]:
+def merge_dicts(
+    dict1: Dict[str, Any], dict2: Dict[str, Any], deep: bool = True
+) -> Dict[str, Any]:
     """Merge two dictionaries with optional deep merging"""
     if not deep:
         return {**dict1, **dict2}
-    
+
     result = dict1.copy()
-    
+
     for key, value in dict2.items():
         if key in result and isinstance(result[key], dict) and isinstance(value, dict):
             result[key] = merge_dicts(result[key], value, deep=True)
         else:
             result[key] = value
-    
+
     return result
 
 
 def get_config_hash(config: Dict[str, Any]) -> str:
     """Generate hash of configuration for change detection"""
     import hashlib
-    
+
     # Convert to sorted JSON string for consistent hashing
     config_str = json.dumps(config, sort_keys=True, default=str)
     return hashlib.sha256(config_str.encode()).hexdigest()[:16]
