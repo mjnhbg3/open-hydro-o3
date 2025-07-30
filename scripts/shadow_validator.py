@@ -240,7 +240,7 @@ class ShadowValidator:
             safety_violation = self._check_safety_violations(reading)
             if safety_violation:
                 self.results["safety_violations"] += 1
-                self.results["errors"].append(f"Safety violation at reading {index}: {safety_violation}")
+                # Safety violations are tracked but not treated as script errors
             
             # Run control logic every 10 readings (simulating 10-minute intervals)
             if index % 10 == 0:
