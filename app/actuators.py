@@ -10,6 +10,8 @@ import time
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
 
+from .sensor_io import HARDWARE_PINS
+
 try:
     import RPi.GPIO as GPIO
     HARDWARE_AVAILABLE = True
@@ -20,15 +22,6 @@ except ImportError:
 class ActuatorController:
     """Controls all system actuators with safety limits"""
     
-    # GPIO pin mappings
-    GPIO_PINS = {
-        'pump_a': 17,
-        'pump_b': 27, 
-        'ph_pump': 22,
-        'refill_pump': 25,
-        'fan_pwm': 18,
-        'led_pwm': 13
-    }
     
     # Safety limits (ml per operation)
     SAFETY_LIMITS = {
@@ -54,6 +47,7 @@ class ActuatorController:
         self.logger = logging.getLogger(__name__)
         self.daily_doses = {}  # Track daily dosing amounts
         self.last_dose_reset = datetime.now().date()
+        self.pins = HARDWARE_PINS
         
         # Current actuator states
         self.states = {
@@ -74,18 +68,18 @@ class ActuatorController:
             GPIO.setmode(GPIO.BCM)
             
             # Setup pump control pins
-            for pump, pin in self.GPIO_PINS.items():
+            for pump, pin in self.pins.items():
                 if 'pump' in pump:
                     GPIO.setup(pin, GPIO.OUT)
                     GPIO.output(pin, GPIO.LOW)
             
             # Setup PWM pins
-            GPIO.setup(self.GPIO_PINS['fan_pwm'], GPIO.OUT)
-            GPIO.setup(self.GPIO_PINS['led_pwm'], GPIO.OUT)
+            GPIO.setup(self.pins['fan_pwm'], GPIO.OUT)
+            GPIO.setup(self.pins['led_pwm'], GPIO.OUT)
             
             # Initialize PWM
-            self.fan_pwm = GPIO.PWM(self.GPIO_PINS['fan_pwm'], 1000)  # 1kHz
-            self.led_pwm = GPIO.PWM(self.GPIO_PINS['led_pwm'], 1000)  # 1kHz
+            self.fan_pwm = GPIO.PWM(self.pins['fan_pwm'], 1000)  # 1kHz
+            self.led_pwm = GPIO.PWM(self.pins['led_pwm'], 1000)  # 1kHz
             
             self.fan_pwm.start(0)
             self.led_pwm.start(0)
@@ -196,7 +190,7 @@ class ActuatorController:
         # Stop all pumps
         for pump in ['pump_a', 'pump_b', 'ph_pump', 'refill_pump']:
             if not self.mock:
-                GPIO.output(self.GPIO_PINS[pump], GPIO.LOW)
+                GPIO.output(self.pins[pump], GPIO.LOW)
             self.states['pumps'][pump] = False
         
         # Stop fan and LEDs
@@ -263,7 +257,7 @@ class ActuatorController:
         try:
             # Turn on pump
             if not self.mock:
-                GPIO.output(self.GPIO_PINS[pump_name], GPIO.HIGH)
+                GPIO.output(self.pins[pump_name], GPIO.HIGH)
             
             self.states['pumps'][pump_name] = True
             
@@ -272,7 +266,7 @@ class ActuatorController:
             
             # Turn off pump
             if not self.mock:
-                GPIO.output(self.GPIO_PINS[pump_name], GPIO.LOW)
+                GPIO.output(self.pins[pump_name], GPIO.LOW)
                 
             self.states['pumps'][pump_name] = False
             
@@ -282,7 +276,7 @@ class ActuatorController:
             self.logger.error(f"Pump {pump_name} dosing failed: {e}")
             # Ensure pump is off
             if not self.mock:
-                GPIO.output(self.GPIO_PINS[pump_name], GPIO.LOW)
+                GPIO.output(self.pins[pump_name], GPIO.LOW)
             self.states['pumps'][pump_name] = False
             return False
     

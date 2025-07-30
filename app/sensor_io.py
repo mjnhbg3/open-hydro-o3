@@ -20,27 +20,46 @@ try:
     import adafruit_bme280
     import adafruit_dht
     import serial
-    from w1thermsensor import W1ThermSensor, Sensor
+    from w1thermsensor import W1ThermSensor
     HARDWARE_AVAILABLE = True
 except ImportError:
     HARDWARE_AVAILABLE = False
     logging.warning("Hardware libraries not available, using mock data")
 
+# Shared hardware mappings
+HARDWARE_PINS: Dict[str, int] = {
+    'pump_a': 17,
+    'pump_b': 27,
+    'ph_pump': 22,
+    'refill_pump': 25,
+    'fan_pwm': 18,
+    'led_pwm': 13,
+    'float_hi': 23,
+    'float_lo': 24,
+}
+
+I2C_ADDRESSES: Dict[str, int] = {
+    'ads1115': 0x48,
+    'bme280': 0x76,
+}
+
+UART_PORTS: Dict[str, str] = {
+    'co2': '/dev/ttyAMA0',
+}
+
+ONEWIRE_IDS: Dict[str, Optional[str]] = {
+    'ds18b20': None,  # Default sensor
+}
+
+ADS_CHANNELS: Dict[str, int] = {
+    'ph': 0,
+    'ec': 1,
+    'turbidity': 2,
+    'lux': 3,
+}
+
 class SensorInterface:
     """Manages all sensor inputs with mock capability"""
-    
-    # Hardware pin mappings
-    GPIO_PINS = {
-        'float_hi': 23,
-        'float_lo': 24,
-    }
-    
-    ADS_CHANNELS = {
-        'ph': 0,
-        'ec': 1, 
-        'turbidity': 2,
-        'lux': 3
-    }
     
     def __init__(self, mock: bool = False):
         self.mock = mock or not HARDWARE_AVAILABLE
@@ -56,30 +75,34 @@ class SensorInterface:
         try:
             # GPIO setup
             GPIO.setmode(GPIO.BCM)
-            GPIO.setup(self.GPIO_PINS['float_hi'], GPIO.IN, pull_up_down=GPIO.PUD_UP)
-            GPIO.setup(self.GPIO_PINS['float_lo'], GPIO.IN, pull_up_down=GPIO.PUD_UP)
+            GPIO.setup(HARDWARE_PINS['float_hi'], GPIO.IN, pull_up_down=GPIO.PUD_UP)
+            GPIO.setup(HARDWARE_PINS['float_lo'], GPIO.IN, pull_up_down=GPIO.PUD_UP)
             
             # I2C setup
             i2c = busio.I2C(board.SCL, board.SDA)
             
             # ADS1115 ADC
-            self.ads = ADS.ADS1115(i2c, address=0x48)
+            self.ads = ADS.ADS1115(i2c, address=I2C_ADDRESSES['ads1115'])
             self.ads_channels = {
                 name: AnalogIn(self.ads, getattr(ADS, f'P{ch}'))
-                for name, ch in self.ADS_CHANNELS.items()
+                for name, ch in ADS_CHANNELS.items()
             }
             
             # BME280 environmental sensor
-            self.bme280 = adafruit_bme280.Adafruit_BME280_I2C(i2c, address=0x76)
+            self.bme280 = adafruit_bme280.Adafruit_BME280_I2C(i2c, address=I2C_ADDRESSES['bme280'])
             
             # DHT22 humidity sensor (backup)
             self.dht = adafruit_dht.DHT22(board.D2)
             
             # DS18B20 1-wire temperature
-            self.ds18b20 = W1ThermSensor(Sensor.DS18B20)
+            sensor_id = ONEWIRE_IDS.get('ds18b20')
+            if sensor_id is not None:
+                self.ds18b20 = W1ThermSensor(sensor_id)
+            else:
+                self.ds18b20 = W1ThermSensor()
             
             # MH-Z19B CO2 sensor
-            self.co2_serial = serial.Serial('/dev/ttyAMA0', 9600, timeout=1)
+            self.co2_serial = serial.Serial(UART_PORTS['co2'], 9600, timeout=1)
             
             self.logger.info("Hardware sensors initialized")
             
@@ -136,8 +159,8 @@ class SensorInterface:
         water_temp = self.ds18b20.get_temperature()
         
         # Read float switches
-        level_high = not GPIO.input(self.GPIO_PINS['float_hi'])  # Inverted logic
-        level_low = not GPIO.input(self.GPIO_PINS['float_lo'])
+        level_high = not GPIO.input(HARDWARE_PINS['float_hi'])  # Inverted logic
+        level_low = not GPIO.input(HARDWARE_PINS['float_lo'])
         
         return {
             "ph": round(ph_value, 2),
@@ -275,3 +298,13 @@ class SensorInterface:
                     self.co2_serial.close()
             except Exception:
                 pass
+
+
+__all__ = [
+    'SensorInterface',
+    'HARDWARE_PINS',
+    'I2C_ADDRESSES',
+    'UART_PORTS',
+    'ONEWIRE_IDS',
+    'ADS_CHANNELS',
+]
