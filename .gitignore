@@ -54,6 +54,7 @@ Thumbs.db
 
 # Data directories (will be created on Pi)
 data/
+!tests/data/
 ~/hydro/
 
 # Test artifacts

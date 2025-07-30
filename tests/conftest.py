@@ -8,27 +8,28 @@ import os
 import pytest
 import tempfile
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 from datetime import datetime
 
 # Mock hardware imports
 import sys
-sys.modules['RPi'] = MagicMock()
-sys.modules['RPi.GPIO'] = MagicMock()
-sys.modules['board'] = MagicMock()
-sys.modules['busio'] = MagicMock()
-sys.modules['adafruit_ads1x15'] = MagicMock()
-sys.modules['adafruit_ads1x15.ads1115'] = MagicMock()
-sys.modules['adafruit_ads1x15.analog_in'] = MagicMock()
-sys.modules['adafruit_bme280'] = MagicMock()
-sys.modules['adafruit_dht'] = MagicMock()
-sys.modules['serial'] = MagicMock()
-sys.modules['w1thermsensor'] = MagicMock()
-sys.modules['chromadb'] = MagicMock()
+
+sys.modules["RPi"] = MagicMock()
+sys.modules["RPi.GPIO"] = MagicMock()
+sys.modules["board"] = MagicMock()
+sys.modules["busio"] = MagicMock()
+sys.modules["adafruit_ads1x15"] = MagicMock()
+sys.modules["adafruit_ads1x15.ads1115"] = MagicMock()
+sys.modules["adafruit_ads1x15.analog_in"] = MagicMock()
+sys.modules["adafruit_bme280"] = MagicMock()
+sys.modules["adafruit_dht"] = MagicMock()
+sys.modules["serial"] = MagicMock()
+sys.modules["w1thermsensor"] = MagicMock()
+sys.modules["chromadb"] = MagicMock()
 
 # Set test environment
-os.environ['MOCK_HARDWARE'] = 'true'
-os.environ['USE_LLM'] = 'false'
+os.environ["MOCK_HARDWARE"] = "true"
+os.environ["USE_LLM"] = "false"
 
 
 @pytest.fixture
@@ -50,21 +51,11 @@ def mock_sensor_data():
             "temperature": 22.0,
             "turbidity": 5.0,
             "level_high": True,
-            "level_low": True
+            "level_low": True,
         },
-        "air": {
-            "temperature": 24.0,
-            "humidity": 60.0,
-            "pressure": 1013.0,
-            "co2": 800
-        },
-        "root": {
-            "temperature": 21.0
-        },
-        "light": {
-            "lux": 25000,
-            "led_power": 80
-        }
+        "air": {"temperature": 24.0, "humidity": 60.0, "pressure": 1013.0, "co2": 800},
+        "root": {"temperature": 21.0},
+        "light": {"lux": 25000, "led_power": 80},
     }
 
 
@@ -91,7 +82,7 @@ def mock_config():
             "humidity_max": 70,
             "co2_target": 800,
             "co2_min": 400,
-            "co2_max": 1200
+            "co2_max": 1200,
         },
         "schedules": {
             "light_hours": 16,
@@ -100,7 +91,7 @@ def mock_config():
             "light_power_night": 0,
             "fan_base_speed": 20,
             "sensor_poll_interval_s": 60,
-            "control_loop_interval_s": 600
+            "control_loop_interval_s": 600,
         },
         "hardware": {
             "gpio_pins": {
@@ -111,15 +102,15 @@ def mock_config():
                 "fan_pwm": 18,
                 "led_pwm": 13,
                 "float_hi": 23,
-                "float_lo": 24
+                "float_lo": 24,
             },
             "flow_rates_ml_per_s": {
                 "pump_a": 2.5,
                 "pump_b": 2.5,
                 "ph_pump": 1.0,
-                "refill_pump": 50.0
-            }
-        }
+                "refill_pump": 50.0,
+            },
+        },
     }
 
 
@@ -127,24 +118,24 @@ def mock_config():
 def temp_db():
     """Temporary database for testing"""
     from app.memory.db import Database
-    
+
     # Create temporary database file
-    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.db')
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".db")
     temp_file.close()
-    
+
     db = Database(temp_file.name)
-    
+
     yield db
-    
+
     # Cleanup
     try:
         asyncio.run(db.close())
-    except:
+    except Exception:
         pass
-    
+
     try:
         os.unlink(temp_file.name)
-    except:
+    except Exception:
         pass
 
 
@@ -153,18 +144,15 @@ def mock_openai():
     """Mock OpenAI API responses"""
     mock_response = MagicMock()
     mock_response.choices = [MagicMock()]
-    mock_response.choices[0].message.content = json.dumps({
-        "decisions": {
-            "dose": {
-                "pump_a": {"ml": 2.5, "reason": "EC adjustment"},
-                "pump_b": {"ml": 1.5, "reason": "EC adjustment"}
-            }
-        },
-        "reasoning": "pH and EC are within acceptable ranges, making minor adjustment",
-        "confidence": 0.8
-    })
-    
-    with patch('openai.OpenAI') as mock_openai_class:
+
+    # Load mocked response content from JSON file for reuse
+    mock_file = Path("tests/data/o3_mock.json")
+    with mock_file.open("r") as f:
+        mock_payload = json.load(f)
+
+    mock_response.choices[0].message.content = json.dumps(mock_payload)
+
+    with patch("openai.OpenAI") as mock_openai_class:
         mock_client = MagicMock()
         mock_client.chat.completions.create.return_value = mock_response
         mock_openai_class.return_value = mock_client
@@ -176,36 +164,38 @@ def mock_chromadb():
     """Mock ChromaDB for vector memory testing"""
     mock_client = MagicMock()
     mock_collection = MagicMock()
-    
+
     # Mock collection methods
     mock_collection.count.return_value = 10
     mock_collection.add = MagicMock()
     mock_collection.query.return_value = {
-        'documents': [['test document 1', 'test document 2']],
-        'metadatas': [[
-            {'timestamp': '2023-01-01T12:00:00', 'data': '{"test": "data1"}'},
-            {'timestamp': '2023-01-01T13:00:00', 'data': '{"test": "data2"}'}
-        ]],
-        'distances': [[0.1, 0.2]]
+        "documents": [["test document 1", "test document 2"]],
+        "metadatas": [
+            [
+                {"timestamp": "2023-01-01T12:00:00", "data": '{"test": "data1"}'},
+                {"timestamp": "2023-01-01T13:00:00", "data": '{"test": "data2"}'},
+            ]
+        ],
+        "distances": [[0.1, 0.2]],
     }
     mock_collection.get.return_value = {
-        'ids': ['id1', 'id2'],
-        'metadatas': [
-            {'timestamp': '2023-01-01T12:00:00', 'data': '{"test": "data1"}'},
-            {'timestamp': '2023-01-01T13:00:00', 'data': '{"test": "data2"}'}
-        ]
+        "ids": ["id1", "id2"],
+        "metadatas": [
+            {"timestamp": "2023-01-01T12:00:00", "data": '{"test": "data1"}'},
+            {"timestamp": "2023-01-01T13:00:00", "data": '{"test": "data2"}'},
+        ],
     }
-    
+
     mock_client.get_or_create_collection.return_value = mock_collection
-    
-    with patch('chromadb.PersistentClient', return_value=mock_client):
+
+    with patch("chromadb.PersistentClient", return_value=mock_client):
         yield mock_collection
 
 
 @pytest.fixture
 def mock_gpio():
     """Mock GPIO operations"""
-    with patch('RPi.GPIO') as mock_gpio:
+    with patch("RPi.GPIO") as mock_gpio:
         mock_gpio.BCM = 11
         mock_gpio.OUT = 0
         mock_gpio.IN = 1
@@ -235,17 +225,19 @@ def sample_kpis():
         "pump_a_ml_24h": 8.0,
         "pump_b_ml_24h": 5.0,
         "ph_pump_ml_24h": 2.5,
-        "days_since_reservoir_change": 3
+        "days_since_reservoir_change": 3,
     }
 
 
 @pytest.fixture
 def mock_serial():
     """Mock serial communication for CO2 sensor"""
-    with patch('serial.Serial') as mock_serial:
+    with patch("serial.Serial") as mock_serial:
         mock_instance = MagicMock()
         mock_instance.write = MagicMock()
-        mock_instance.read.return_value = b'\xff\x86\x01\x90\x00\x00\x00\x00\x79'  # 400 ppm CO2
+        mock_instance.read.return_value = (
+            b"\xff\x86\x01\x90\x00\x00\x00\x00\x79"  # 400 ppm CO2
+        )
         mock_serial.return_value = mock_instance
         yield mock_instance
 
@@ -253,7 +245,7 @@ def mock_serial():
 @pytest.fixture
 def mock_camera():
     """Mock camera operations"""
-    with patch('cv2.VideoCapture') as mock_cap:
+    with patch("cv2.VideoCapture") as mock_cap:
         mock_instance = MagicMock()
         mock_instance.isOpened.return_value = True
         mock_instance.read.return_value = (True, MagicMock())  # Success, frame
@@ -264,15 +256,9 @@ def mock_camera():
 # Pytest configuration
 def pytest_configure(config):
     """Configure pytest"""
-    config.addinivalue_line(
-        "markers", "asyncio: mark test as async"
-    )
-    config.addinivalue_line(
-        "markers", "integration: mark test as integration test"
-    )
-    config.addinivalue_line(
-        "markers", "slow: mark test as slow running"
-    )
+    config.addinivalue_line("markers", "asyncio: mark test as async")
+    config.addinivalue_line("markers", "integration: mark test as integration test")
+    config.addinivalue_line("markers", "slow: mark test as slow running")
 
 
 def pytest_collection_modifyitems(config, items):
@@ -281,7 +267,7 @@ def pytest_collection_modifyitems(config, items):
         # Add asyncio marker to async tests
         if asyncio.iscoroutinefunction(item.function):
             item.add_marker(pytest.mark.asyncio)
-        
+
         # Add slow marker to tests that might be slow
-        if 'llm' in item.name.lower() or 'integration' in item.name.lower():
+        if "llm" in item.name.lower() or "integration" in item.name.lower():
             item.add_marker(pytest.mark.slow)
