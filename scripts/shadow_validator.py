@@ -47,6 +47,7 @@ class ShadowValidator:
             "safety_violations": 0,
             "actions_taken": 0,
             "errors": [],
+            "warnings": [],
             "performance_metrics": {},
         }
 
@@ -76,7 +77,13 @@ class ShadowValidator:
             raise
 
     async def run_validation(self) -> dict:
-        """Run complete shadow validation"""
+        """Run complete shadow validation
+
+        Safety violations encountered during processing are logged in the
+        ``warnings`` list but do not cause the overall ``success`` flag to
+        be false. The method returns a dictionary containing ``success``,
+        ``validation_passed``, and all collected metrics.
+        """
         try:
             self.logger.info(
                 f"Starting shadow validation with data file: {self.data_file}"

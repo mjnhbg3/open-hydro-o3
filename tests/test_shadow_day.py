@@ -7,6 +7,7 @@ import pytest
 import tempfile
 from datetime import datetime, timedelta
 from pathlib import Path
+from unittest.mock import AsyncMock, patch
 
 from scripts.shadow_validator import ShadowValidator
 
@@ -182,20 +183,23 @@ class TestShadowDayValidation:
         validator = ShadowValidator(problematic_sensor_csv)
 
         try:
-            await validator.initialize()
-            result = await validator.run_validation()
+            with patch("scripts.shadow_validator.LLMAgent"):
+                await validator.initialize()
+                validator.db.get_database_stats = AsyncMock(return_value={})
+                result = await validator.run_validation()
 
-            assert result["success"]  # Script ran successfully
+            assert result["success"] is True  # Script ran successfully
             assert result["total_readings"] == 12
 
-            # Should detect safety violations
+            # Should detect safety violations without failing overall execution
             assert result["safety_violations"] > 0
+            assert len(result["warnings"]) >= result["safety_violations"]
 
             # Validation should fail due to safety violations
-            assert not result["validation_passed"]
+            assert result["validation_passed"] is False
 
             requirements = result["requirements_check"]
-            assert not requirements["safety_requirement"]["passed"]
+            assert requirements["safety_requirement"]["passed"] is False
 
         finally:
             await validator.cleanup()
