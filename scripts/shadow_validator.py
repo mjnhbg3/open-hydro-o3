@@ -255,7 +255,7 @@ class ShadowValidator:
                 self.results.setdefault("warnings", []).append(
                     f"Safety violation at reading {index}: {safety_violation}"
                 )
-
+                # Safety violations are tracked but not treated as script errors
             # Run control logic every 10 readings (simulating 10-minute intervals)
             if index % 10 == 0:
                 await self._run_control_logic(reading)

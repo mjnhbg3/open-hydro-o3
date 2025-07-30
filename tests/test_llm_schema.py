@@ -309,10 +309,9 @@ class TestLLMIntegration:
 
                 sensor_data = {
                     "water": {"ph": 6.0, "ec": 1.6},
-                    "air": {"temperature": 24.0},
+                    "air": {"temperature": 24.0, "humidity": 55},
                 }
                 config = {"targets": {"ph_target": 6.0}}
-
                 result = await agent.make_decision(sensor_data, config)
 
                 assert result is not None
@@ -333,7 +332,6 @@ class TestLLMIntegration:
         llm_agent.kpi_calc.calculate_current_kpis = AsyncMock(
             return_value={"health_score": 0.8}
         )
-
         # Make multiple decisions with same input
         results = []
         for _ in range(3):

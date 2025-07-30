@@ -109,6 +109,14 @@ Use your expertise to maintain optimal growing conditions while following the st
             # Make API call to o3
             response = await self._call_llm(system_prompt, user_message)
 
+            if "error" in response:
+                self.logger.error(f"LLM API error: {response['error']}")
+                return {
+                    "error": response["error"],
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "fallback": True,
+                }
+
             # Validate and parse response
             parsed_response = await self._validate_response(response)
 
@@ -118,7 +126,6 @@ Use your expertise to maintain optimal growing conditions while following the st
                     "timestamp": datetime.utcnow().isoformat(),
                     "fallback": True,
                 }
-
             # Store decision in memory
             await self._store_decision(sensor_data, parsed_response)
 
