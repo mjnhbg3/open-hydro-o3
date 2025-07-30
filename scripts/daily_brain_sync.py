@@ -18,7 +18,7 @@ from app.memory.db import Database
 from app.memory.vector import VectorMemory
 from app.memory.kpis import KPICalculator
 from app.utils import setup_logging, create_alert
-from app.config.default import load_config
+from app.utils import load_config
 
 
 class DailyBrainSync:

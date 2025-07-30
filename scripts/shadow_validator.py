@@ -22,7 +22,7 @@ from app.rules import RulesEngine
 from app.memory.db import Database
 from app.memory.kpis import KPICalculator
 from app.utils import setup_logging
-from app.config.default import load_config
+from app.utils import load_config
 
 
 class ShadowValidator:

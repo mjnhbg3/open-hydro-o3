@@ -13,7 +13,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .config.default import load_config
+from .utils import load_config
 from .memory.db import Database
 from .sensor_io import SensorInterface
 from .actuators import ActuatorController
