@@ -1,0 +1,164 @@
+version: '3.8'
+
+services:
+  hydro-controller:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: hydro-controller
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - hydro-data:/data/hydro
+      - ./config:/app/app/config:ro
+    environment:
+      - PYTHONPATH=/app
+      - MOCK_HARDWARE=true
+      - USE_LLM=false
+      - DATABASE_URL=sqlite:////data/hydro/db/hydro.db
+      - CHROMA_PATH=/data/hydro/chroma
+      - LOG_PATH=/data/hydro/logs
+      - LOG_LEVEL=INFO
+    env_file:
+      - ../.env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - hydro-network
+
+  hydro-sensor-poll:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: hydro-sensor-poll
+    restart: unless-stopped
+    volumes:
+      - hydro-data:/data/hydro
+      - ./config:/app/app/config:ro
+    environment:
+      - PYTHONPATH=/app
+      - MOCK_HARDWARE=true
+      - DATABASE_URL=sqlite:////data/hydro/db/hydro.db
+      - LOG_PATH=/data/hydro/logs
+      - LOG_LEVEL=INFO
+    command: >
+      sh -c "while true; do
+        python scripts/sensor_poll.py
+        sleep 60
+      done"
+    depends_on:
+      - hydro-controller
+    networks:
+      - hydro-network
+
+  hydro-control-loop:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: hydro-control-loop
+    restart: unless-stopped
+    volumes:
+      - hydro-data:/data/hydro
+      - ./config:/app/app/config:ro
+    environment:
+      - PYTHONPATH=/app
+      - MOCK_HARDWARE=true
+      - USE_LLM=false
+      - DATABASE_URL=sqlite:////data/hydro/db/hydro.db
+      - CHROMA_PATH=/data/hydro/chroma
+      - LOG_PATH=/data/hydro/logs
+      - LOG_LEVEL=INFO
+    env_file:
+      - ../.env
+    command: >
+      sh -c "while true; do
+        python scripts/control_loop.py
+        sleep 600
+      done"
+    depends_on:
+      - hydro-controller
+      - hydro-sensor-poll
+    networks:
+      - hydro-network
+
+  hydro-kpi-rollup:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: hydro-kpi-rollup
+    restart: unless-stopped
+    volumes:
+      - hydro-data:/data/hydro
+      - ./config:/app/app/config:ro
+    environment:
+      - PYTHONPATH=/app
+      - DATABASE_URL=sqlite:////data/hydro/db/hydro.db
+      - LOG_PATH=/data/hydro/logs
+      - LOG_LEVEL=INFO
+    command: >
+      sh -c "while true; do
+        python scripts/kpi_rollup.py
+        sleep 3600
+      done"
+    depends_on:
+      - hydro-controller
+    networks:
+      - hydro-network
+
+  hydro-brain-sync:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: hydro-brain-sync
+    restart: unless-stopped
+    volumes:
+      - hydro-data:/data/hydro
+      - ./config:/app/app/config:ro
+    environment:
+      - PYTHONPATH=/app
+      - DATABASE_URL=sqlite:////data/hydro/db/hydro.db
+      - CHROMA_PATH=/data/hydro/chroma
+      - LOG_PATH=/data/hydro/logs
+      - LOG_LEVEL=INFO
+    env_file:
+      - ../.env
+    command: >
+      sh -c "while true; do
+        python scripts/daily_brain_sync.py
+        sleep 86400
+      done"
+    depends_on:
+      - hydro-controller
+    networks:
+      - hydro-network
+
+  node-red:
+    image: nodered/node-red:latest
+    container_name: hydro-node-red
+    restart: unless-stopped
+    ports:
+      - "1880:1880"
+    volumes:
+      - node-red-data:/data
+      - ../flow/flow.json:/data/flows.json:ro
+    environment:
+      - TZ=UTC
+    depends_on:
+      - hydro-controller
+    networks:
+      - hydro-network
+
+volumes:
+  hydro-data:
+    driver: local
+  node-red-data:
+    driver: local
+
+networks:
+  hydro-network:
+    driver: bridge

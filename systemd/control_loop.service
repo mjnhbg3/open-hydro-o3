@@ -1,0 +1,39 @@
+[Unit]
+Description=Hydroponic Control Loop Service
+After=network.target
+Wants=sensor_poll.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User={{USER}}
+Group={{USER}}
+WorkingDirectory={{PROJECT_DIR}}
+Environment=PYTHONPATH={{PROJECT_DIR}}
+Environment=MOCK_HARDWARE=true
+Environment=USE_LLM=false
+ExecStart={{PYTHON_PATH}} {{PROJECT_DIR}}/scripts/control_loop.py
+Restart=on-failure
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=hydro-control-loop
+
+# Resource limits
+MemoryMax=512M
+CPUQuota=75%
+TimeoutStartSec=60
+TimeoutStopSec=30
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths={{PROJECT_DIR}} /home/{{USER}}/hydro /var/log/hydro
+
+# Environment file for secrets
+EnvironmentFile=-{{PROJECT_DIR}}/.env
+
+[Install]
+WantedBy=multi-user.target

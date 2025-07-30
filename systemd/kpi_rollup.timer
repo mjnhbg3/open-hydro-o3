@@ -1,0 +1,11 @@
+[Unit]
+Description=Run KPI Rollup Service Hourly
+Requires=kpi_rollup.service
+
+[Timer]
+OnCalendar=hourly
+RandomizedDelaySec=300
+Persistent=true
+
+[Install]
+WantedBy=timers.target

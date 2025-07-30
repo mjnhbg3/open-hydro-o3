@@ -1,0 +1,63 @@
+[Unit]
+Description=Hydroponic System Watchdog
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User={{USER}}
+Group={{USER}}
+WorkingDirectory={{PROJECT_DIR}}
+Environment=PYTHONPATH={{PROJECT_DIR}}
+ExecStart={{PYTHON_PATH}} -c "
+import asyncio
+import time
+import logging
+import subprocess
+from datetime import datetime, timedelta
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger('watchdog')
+
+async def check_services():
+    services = ['sensor_poll.service', 'control_loop.service']
+    
+    for service in services:
+        try:
+            result = subprocess.run(['systemctl', 'is-active', service], 
+                                  capture_output=True, text=True)
+            
+            if result.returncode != 0:
+                logger.error(f'Service {service} is not active, attempting restart')
+                subprocess.run(['sudo', 'systemctl', 'restart', service])
+                
+        except Exception as e:
+            logger.error(f'Watchdog check failed for {service}: {e}')
+
+async def main():
+    logger.info('Hydroponic watchdog started')
+    
+    while True:
+        await check_services()
+        await asyncio.sleep(300)  # Check every 5 minutes
+
+asyncio.run(main())
+"
+Restart=always
+RestartSec=60
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=hydro-watchdog
+
+# Resource limits
+MemoryMax=128M
+CPUQuota=25%
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+
+[Install]
+WantedBy=multi-user.target

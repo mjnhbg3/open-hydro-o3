@@ -1,0 +1,26 @@
+[Unit]
+Description=Hydroponic KPI Rollup Service
+After=network.target
+
+[Service]
+Type=oneshot
+User={{USER}}
+Group={{USER}}
+WorkingDirectory={{PROJECT_DIR}}
+Environment=PYTHONPATH={{PROJECT_DIR}}
+ExecStart={{PYTHON_PATH}} {{PROJECT_DIR}}/scripts/kpi_rollup.py
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=hydro-kpi-rollup
+
+# Resource limits
+MemoryMax=256M
+CPUQuota=50%
+TimeoutStartSec=300
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths={{PROJECT_DIR}} /home/{{USER}}/hydro /var/log/hydro

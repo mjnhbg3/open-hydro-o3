@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Fan Control Command",
+  "type": "object",
+  "properties": {
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "fan_speed": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Fan speed as percentage"
+    },
+    "duration_minutes": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 1440,
+      "description": "Duration to run fan at this speed"
+    },
+    "reason": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "Explanation for fan adjustment"
+    }
+  },
+  "required": ["timestamp", "fan_speed", "duration_minutes", "reason"]
+}

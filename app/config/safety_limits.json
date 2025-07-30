@@ -1,0 +1,50 @@
+{
+  "ph_min_absolute": 4.0,
+  "ph_max_absolute": 8.0,
+  "ec_min_absolute": 0.5,
+  "ec_max_absolute": 3.0,
+  "temp_min_absolute": 10,
+  "temp_max_absolute": 35,
+  "humidity_max_absolute": 95,
+  "co2_max_absolute": 2000,
+  
+  "dosing_limits": {
+    "max_daily_dose_ml": 200,
+    "max_single_dose_ml": 50,
+    "ph_pump_max_single_ml": 20,
+    "max_consecutive_doses": 3,
+    "min_dose_interval_minutes": 30
+  },
+  
+  "actuator_limits": {
+    "fan_max_speed": 100,
+    "fan_min_runtime_minutes": 5,
+    "led_max_power": 100,
+    "pump_max_runtime_minutes": 10,
+    "emergency_stop_conditions": [
+      "water_level_critical_low",
+      "ph_outside_absolute_limits",
+      "ec_outside_absolute_limits",
+      "temperature_outside_absolute_limits"
+    ]
+  },
+  
+  "system_limits": {
+    "max_reservoir_changes_per_week": 2,
+    "min_days_between_changes": 3,
+    "max_config_changes_per_day": 5,
+    "sensor_failure_timeout_minutes": 60,
+    "pump_failure_timeout_seconds": 300
+  },
+  
+  "alert_thresholds": {
+    "ph_deviation_warning": 0.3,
+    "ph_deviation_critical": 0.5,
+    "ec_deviation_warning": 0.2,
+    "ec_deviation_critical": 0.4,
+    "temp_deviation_warning": 3.0,
+    "temp_deviation_critical": 5.0,
+    "water_level_low_warning": 20,
+    "water_level_critical": 10
+  }
+}

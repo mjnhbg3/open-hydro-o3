@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Shadow Validation Weekly
+Requires=shadow_validator.service
+
+[Timer]
+OnCalendar=weekly
+RandomizedDelaySec=7200
+Persistent=true
+
+[Install]
+WantedBy=timers.target

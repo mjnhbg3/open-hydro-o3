@@ -1,0 +1,57 @@
+{
+  "version": "1.0.0",
+  "grow_phase": "vegetative",
+  "reservoir_volume_l": 20,
+  "baseline_dosing_ml_per_week": 50,
+  
+  "targets": {
+    "ph_target": 6.0,
+    "ph_min": 5.5,
+    "ph_max": 6.5,
+    "ec_target": 1.6,
+    "ec_min": 1.2,
+    "ec_max": 2.0,
+    "temp_target": 22,
+    "temp_min": 18,
+    "temp_max": 26,
+    "humidity_target": 60,
+    "humidity_min": 50,
+    "humidity_max": 70,
+    "co2_target": 800,
+    "co2_min": 400,
+    "co2_max": 1200
+  },
+  
+  "schedules": {
+    "light_hours": 16,
+    "light_start_time": "06:00",
+    "light_power_day": 80,
+    "light_power_night": 0,
+    "fan_base_speed": 20,
+    "sensor_poll_interval_s": 60,
+    "control_loop_interval_s": 600
+  },
+  
+  "hardware": {
+    "i2c_bus": 1,
+    "uart_device": "/dev/ttyAMA0",
+    "gpio_pins": {
+      "pump_a": 17,
+      "pump_b": 27,
+      "ph_pump": 22,
+      "refill_pump": 25,
+      "fan_pwm": 18,
+      "led_pwm": 13,
+      "float_hi": 23,
+      "float_lo": 24
+    },
+    "ads1115_address": "0x48",
+    "bme280_address": "0x76",
+    "flow_rates_ml_per_s": {
+      "pump_a": 2.5,
+      "pump_b": 2.5,
+      "ph_pump": 1.0,
+      "refill_pump": 50.0
+    }
+  }
+}
