@@ -1,0 +1,10 @@
+{
+  "decisions": {
+    "dose": {
+      "pump_a": {"ml": 2.5, "reason": "EC adjustment"},
+      "pump_b": {"ml": 1.5, "reason": "EC adjustment"}
+    }
+  },
+  "reasoning": "pH and EC are within acceptable ranges, making minor adjustment",
+  "confidence": 0.8
+}
