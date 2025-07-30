@@ -259,6 +259,7 @@ class ShadowValidator:
             safety_violation = self._check_safety_violations(reading)
             if safety_violation:
                 self.results["safety_violations"] += 1
+                # Safety violations are tracked but not treated as script errors
                 self.results["warnings"].append(
                     f"Safety violation at reading {index}: {safety_violation}"
                 )
